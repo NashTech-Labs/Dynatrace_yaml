@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dynatrace-oneagent
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dynatrace-oneagent
+spec:
+  selector:
+    matchLabels:
+      name: dynatrace-oneagent
+  template:
+    metadata:
+      labels:
+        name: dynatrace-oneagent
+    spec:
+      serviceAccountName: dynatrace-oneagent
+      containers:
+        - name: oneagent
+          image: "docker.io/dynatrace/oneagent"
+          imagePullPolicy: Always
+          env:
+            - name: ONEAGENT_INSTALLER_SKIP_CERT_CHECK
+              value: "true"
+            - name: ONEAGENT_INSTALLER_SCRIPT_URL
+              value: "https://your-environment-id.live.dynatrace.com/api/v1/deployment/installer/agent/unix/default/latest?Api-Token=your-api-token"
+          volumeMounts:
+            - name: hostroot
+              mountPath: /mnt/root
+            - name: hostproc
+              mountPath: /mnt/root/proc
+              readOnly: true
+            - name: hostdev
+              mountPath: /mnt/root/dev
+              readOnly: true
+            - name: hostcgroup
+              mountPath: /mnt/root/sys/fs/cgroup
+              readOnly: true
+      volumes:
+        - name: hostroot
+          hostPath:
+            path: /
+        - name: hostproc
+          hostPath:
+            path: /proc
+        - name: hostdev
+          hostPath:
+            path: /dev
+        - name: hostcgroup
+          hostPath:
+            path: /sys/fs/cgroup
